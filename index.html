@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Architecture — Smallest AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#f1f3f5;color:#1e293b;padding:32px 24px;max-width:1580px;margin:0 auto}
+    .header{text-align:center;margin-bottom:16px}
+    .header h1{font-size:28px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;margin-bottom:2px}
+    .header .sub{font-size:13px;color:#64748b;font-weight:400}
+    .header .meta{font-size:10px;color:#94a3b8;font-weight:400;margin-top:4px}
+    .legend{display:flex;justify-content:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;font-size:11px}
+    .legend-item{display:flex;align-items:center;gap:5px;color:#64748b;font-weight:500}
+    .leg{width:32px;height:2px;border-radius:1px}
+    .leg.solid{background:#475569}
+    .leg.dotted{background:repeating-linear-gradient(90deg,#7c3aed 0,#7c3aed 3px,transparent 3px,transparent 6px)}
+    .leg.bidir{background:#059669}
+    .leg.bus{background:#374151;height:3px}
+    .diagram-wrap{background:#fff;border-radius:12px;padding:20px 14px;margin-bottom:20px;box-shadow:0 1px 2px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.05);overflow-x:auto}
+    .mermaid{display:flex;justify-content:center;min-height:720px}
+    .stitle{font-size:15px;font-weight:700;color:#0f172a;margin:24px 0 12px;display:flex;align-items:center;gap:6px}
+    .stitle::before{content:'';width:2.5px;height:16px;border-radius:2px;background:linear-gradient(180deg,#2563eb,#7c3aed)}
+    .matrix{background:#fff;border-radius:10px;padding:14px 12px;box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-bottom:20px;overflow-x:auto}
+    .matrix h3{font-size:13px;font-weight:700;margin-bottom:10px;color:#0f172a}
+    .mtable{width:100%;border-collapse:collapse;font-size:10.5px}
+    .mtable th{background:#f8fafc;padding:7px 9px;text-align:left;font-weight:700;color:#1e293b;border-bottom:1px solid #cbd5e1;white-space:nowrap}
+    .mtable td{padding:7px 9px;border-bottom:1px solid #e2e8f0;color:#374151}
+    .mtable tr:hover{background:#f8fafc}
+    .mtable .sys{font-weight:600;color:#0f172a}
+    .dec-box{background:#fff;border-radius:10px;padding:14px 12px;box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-bottom:20px;border-left:3px solid #2563eb}
+    .dec-box h3{font-size:13px;font-weight:700;margin-bottom:9px;color:#0f172a}
+    .dec-item{background:#f8fafc;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:#374151;line-height:1.4}
+    .dec-item b{color:#0f172a;font-weight:600}
+    .dec-item .if{color:#dc2626;font-weight:600}
+    .dec-item .then{color:#059669;font-weight:600}
+    .ownership-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:10px}
+    .ownership-table th{background:#f1f5f9;padding:8px 10px;text-align:left;font-weight:700;color:#0f172a;border-bottom:2px solid #cbd5e1}
+    .ownership-table td{padding:8px 10px;border-bottom:1px solid #e2e8f0}
+    .ownership-table tr:hover{background:#f8fafc}
+    .ownership-table .dash{font-weight:600;color:#0f172a}
+    .ownership-table .owner{font-weight:600;color:#2563eb}
+    .ownership-table .freq{font-size:9px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+    .ownership-table .actions{color:#059669;font-size:10px}
+    .note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin:14px 0;font-size:11px;color:#1e40af;line-height:1.45}
+    @media(max-width:768px){body{padding:16px 12px}.mtable,.ownership-table{font-size:9.5px}.mtable th,.mtable td,.ownership-table th,.ownership-table td{padding:5px 7px}}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>System Architecture — Smallest AI</h1>
+  <p class="sub">Autonomous revenue operating system: marketing, sales, delivery, finance, data, and intelligence unified into one execution and decision layer.</p>
+  <p class="meta">Owner: RevOps &nbsp;·&nbsp; Last updated: 2026-02-25 &nbsp;·&nbsp; Audience: CEO / GTM / Finance</p>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="leg solid"></div>Operational</div>
+  <div class="legend-item"><div class="leg dotted"></div>Data replication</div>
+  <div class="legend-item"><div class="leg bus"></div>Bus routing</div>
+  <div class="legend-item"><div class="leg bidir"></div>Bi-directional (CPQ ↔ Pricing Gov)</div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- DIAGRAM — AUTONOMOUS REVENUE OS v5.1            -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="diagram-wrap">
+<pre class="mermaid">
+flowchart TB
+
+%% ========== CLASSES ==========
+classDef signal fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e3a5f
+classDef crm fill:#fef3c7,stroke:#b45309,stroke-width:3px,color:#78350f
+classDef adp fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e
+classDef web fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e3a5f
+classDef attr fill:#cffafe,stroke:#0e7490,stroke-width:1.5px,color:#155e75
+classDef aud fill:#fecaca,stroke:#dc2626,stroke-width:1.5px,color:#7f1d1d
+classDef reach fill:#fed7aa,stroke:#d97706,stroke-width:1.5px,color:#7c2d12
+classDef rattle fill:#fca5a5,stroke:#dc2626,stroke-width:1.5px,color:#7f1d1d
+classDef route fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px,color:#15803d
+classDef exp fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px,color:#15803d
+classDef cpq fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px,color:#15803d
+classDef docs fill:#e0e7ff,stroke:#4338ca,stroke-width:1.5px,color:#312e81
+classDef stripe fill:#fef3c7,stroke:#b45309,stroke-width:1.5px,color:#78350f
+classDef rock fill:#d1fae5,stroke:#047857,stroke-width:1.5px,color:#064e3b
+classDef tick fill:#fff7ed,stroke:#ea580c,stroke-width:1.5px,color:#9a3412
+classDef escal fill:#fca5a5,stroke:#dc2626,stroke-width:1.5px,color:#7f1d1d
+classDef portal fill:#f3e8ff,stroke:#7c3aed,stroke-width:1.5px,color:#3b0764
+classDef meter fill:#fef3c7,stroke:#b45309,stroke-width:1.5px,color:#78350f
+classDef cap fill:#fce7f3,stroke:#be185d,stroke-width:1.5px,color:#831843
+classDef ret fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px,color:#15803d
+classDef forecast fill:#fef3c7,stroke:#b45309,stroke-width:1.5px,color:#78350f
+classDef pipe fill:#ede9fe,stroke:#6d28d9,stroke-width:1.5px,color:#3b0764
+classDef intel fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px,color:#15803d
+classDef gov fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,color:#334155
+classDef dash fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,color:#334155
+classDef scenario fill:#fef5e7,stroke:#ea580c,stroke-width:1.5px,color:#9a3412
+classDef trigger fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d
+classDef busnode fill:#f0f0f0,stroke:#374151,stroke-width:2.5px,color:#1f2937
+
+%% =========================================
+%% L1 — SIGNAL + ENGAGEMENT + HUBS
+%% =========================================
+subgraph L1["  L1  SIGNALS + ENGAGEMENT  "]
+  direction LR
+  FP["First-Party\n- Ad clicks\n- Forms\n- Website visits"]
+  TP["Third-Party\n- Intent data\n- Job changes"]
+end
+
+%% =========================================
+%% SIGNAL + OPERATIONS + DATA + METRICS BUSES
+%% =========================================
+SIGNAL_BUS["🔔 SIGNAL BUS\n(Inbound routing)"]
+OPERATIONS_BUS["⚙️ OPERATIONS BUS\n(Action dispatch)"]
+DATA_BUS["📊 DATA BUS\n(Replication hub)"]
+METRICS_BUS["📈 METRICS BUS\n(Semantic dist.)"]
+
+%% =========================================
+%% L2 — GTM EXECUTION (with Marketing & Unit Econ engines)
+%% =========================================
+subgraph L2["  L2  AUTONOMOUS GTM EXECUTION  "]
+  direction TB
+
+  %% -------------------
+  %% Marketing Intelligence + Optimization
+  %% -------------------
+  subgraph MKTG["Marketing Intelligence & Optimization"]
+    direction TB
+    ADP["Ad Platforms\n- LinkedIn/Google\n- Meta"]
+    EXP["Experiment Engine\n- Creative A/B\n- Audience A/B\n- Landing A/B"]
+    BUDOPT["Budget Optimizer\n- Marginal CAC\n- Channel saturation\n- Reallocation"]
+    WEB["Website/Landing\n- Forms\n- UTM tracking"]
+    ATTR["Attribution\n- Pixel/CAPI\n- Multi-touch"]
+    SCORE["Lead Scoring\n- Fit score\n- Intent score\n- MQL/SQL rules"]
+    MAUD["Audiences\n- Segments\n- Lookalike"]
+  end
+
+  %% -------------------
+  %% Sales Intelligence
+  %% -------------------
+  subgraph SALES["Sales Intelligence"]
+    direction TB
+    ROUTE["Inbound Router\n- Enrichment\n- Territory rules"]
+    REACH["Outreach\n- Sequences\n- Mtg booked %"]
+    RATTLE["Rattle\n- Deal risk\n- Forecast signals"]
+  end
+
+  %% -------------------
+  %% Core CRM
+  %% -------------------
+  CRM["CRM — CONTROL TOWER\n- Leads + Opps\n- Forecast + SLAs"]
+
+  %% -------------------
+  %% Forecast Model
+  %% -------------------
+  FORECAST["Forecast Model\n- Commit / Best case\n- Win probability"]
+
+  %% -------------------
+  %% Capacity Engine
+  %% -------------------
+  subgraph CAP["Capacity & Hiring Engine"]
+    direction TB
+    AEMODEL["AE Capacity\n- Coverage ratio\n- Revenue per AE"]
+    SDRMODEL["SDR Capacity\n- Leads/day\n- Mtgs per rep"]
+    PMMODEL["PM Capacity\n- Projects/PM\n- Revenue per PM"]
+  end
+
+  %% -------------------
+  %% Retention Engine
+  %% -------------------
+  subgraph RET["Retention & Expansion Engine"]
+    direction TB
+    HEALTH["Health Model\n- Usage + Tickets\n- Engagement"]
+    CHURN["Churn Risk\n- Risk score %\n- Probability"]
+    EXPAND["Expansion Signals\n- Seat growth\n- Usage expansion"]
+  end
+
+  %% -------------------
+  %% Commercial
+  %% -------------------
+  subgraph COMM["Commercial — Quote to Cash"]
+    direction TB
+    CPQ["CPQ\n- Pricing rules\n- Discounts\n- Guardrails"]
+    PRICEGOV["Pricing Governance\n- Guardrails\n- Exceptions\n- Margin impact"]
+    DOCS["PandaDoc\n- Contract\n- Signature"]
+  end
+
+  %% -------------------
+  %% Implementation
+  %% -------------------
+  subgraph IMPL["Implementation — Delivery Ops"]
+    direction TB
+    ROCK["Rocketlane\n- Phases\n- Go-live"]
+    SCOPE["Scope Control\n- Change orders\n- Delivery cost"]
+    ESCAL["Escalation Hub\n- P1/P2/P3\n- SLA timers"]
+    TICK["Incident Ticket\n- Zendesk/Jira\n- Case sync"]
+  end
+
+  %% -------------------
+  %% CS + Support
+  %% -------------------
+  subgraph CS["Customer Success"]
+    direction TB
+    PORTAL["Support Portal\n- Tickets\n- Auto-case"]
+  end
+
+  %% -------------------
+  %% FinOps
+  %% -------------------
+  subgraph FIN["FinOps — Billing"]
+    direction TB
+    METER["Usage Metering\n- Product events"]
+    STRIPE["Stripe\n- Subscription\n- Invoicing"]
+  end
+
+end
+
+%% =========================================
+%% L3 — DATA FOUNDATION + MODELING + GOVERNANCE
+%% =========================================
+subgraph L3["  L3  DATA FOUNDATION + MODELING + GOVERNANCE  "]
+  direction LR
+  ING["Ingestion"]
+  WH["Warehouse\n- BigQuery\n- Snowflake"]
+
+  subgraph DBT["dbt Modeling Layer"]
+    direction TB
+    REVMODEL["Revenue Model\n- Bookings\n- ARR/NRR"]
+    CAPMODEL["Capacity Model\n- Utilization %\n- Revenue/person"]
+    HEALTHMODEL["Health Model\n- Usage trends"]
+    RETMODEL["Retention Model\n- Churn prob\n- NRR calc"]
+    UNITMODEL["Unit Economics\n- LTV\n- Contribution margin\n- CAC payback\n- Magic number"]
+    ATTRMODEL["Attribution Model\n- Multi-touch\n- Revenue influenced"]
+    EXPMODEL["Experiment Model\n- Test results\n- Lift detection"]
+  end
+
+  CDM["Canonical Data Model\n- dim_account\n- dim_contact\n- fct_opportunity\n- fct_project"]
+
+  DATAGOV["Data Governance\n- Quality checks\n- Metric versioning\n- Lineage\n- RBAC"]
+
+  SEM["Semantic Layer\n- Metrics definitions"]
+  INTEL["Intelligence Engine\n- Anomaly detection\n- Risk scoring\n- CAC payback\n- Cohort analysis"]
+  RETL["Reverse ETL\n- Hightouch"]
+
+end
+
+%% =========================================
+%% L4 — ANALYTICS + INTELLIGENCE + SIMULATION
+%% =========================================
+subgraph L4["  L4  ANALYTICS + INTELLIGENCE + SIMULATION  "]
+  direction LR
+  DMKT(["Marketing\n- CPC·CPL·CPA\n- ROAS\n- Exp results"])
+  DSAL(["Sales\n- Pipeline·Win%\n- Forecast accuracy"])
+  DCOMM(["Commercial\n- ACV·Discount%\n- Time-to-sign"])
+  DCAP(["Capacity\n- Coverage ratio\n- Hiring flag"])
+  DIMPL(["Delivery\n- TTG·On-time%\n- Project margin"])
+  DCS(["CS\n- TTR·SLA%\n- Churn risk"])
+  DUNITEC(["Unit Economics\n- LTV·CAC\n- Contribution%\n- Magic number"])
+  DEXEC(["Executive\n- Funnel·CAC\n- Margin %"])
+  SCENARIO["Scenario Simulator\n- Headcount impact\n- Pricing scenarios\n- Spend shifts\n- Forecast ARR"]
+  ALERTS["Alerts + Triggers\n- Anomalies\n- Hiring flags\n- Risk signals"]
+end
+
+%% =========================================
+%% L5 — GOVERNANCE + AI + EXECUTION
+%% =========================================
+subgraph L5["  L5  GOVERNANCE + AUTONOMOUS EXECUTION  "]
+  direction LR
+  SLACK["Slack\n- /revops\n- @adam"]
+  BOT["RevOps Bot\n- Query read\n- Action write\n- RBAC"]
+  APPROV["Approval\n- Discounts\n- Campaigns\n- Spend shifts"]
+  TRIGGER["Decision Triggers\n- CPA ↑ 25%\n- Coverage < 3x\n- Margin < target"]
+  AUDIT["Audit Log"]
+end
+
+%% =========================================
+%% INBOUND SIGNAL ROUTING
+%% =========================================
+FP -->|"clicks"| SIGNAL_BUS
+TP -->|"intent"| SIGNAL_BUS
+SIGNAL_BUS -->|"route"| ROUTE
+SIGNAL_BUS -->|"signals"| SCORE
+SIGNAL_BUS -->|"leads"| CRM
+
+%% =========================================
+%% MARKETING EXECUTION (internal flow)
+%% =========================================
+ADP -->|"traffic"| WEB
+WEB -->|"leads"| ATTR
+ATTR -->|"attributed"| SCORE
+SCORE -->|"scored"| ROUTE
+MAUD -->|"audience"| ADP
+EXP -->|"tests"| BUDOPT
+BUDOPT -->|"spend"| ADP
+
+%% =========================================
+%% SALES + RETENTION FLOW
+%% =========================================
+ROUTE -->|"enriched"| CRM
+CRM -->|"opps"| OPERATIONS_BUS
+OPERATIONS_BUS -->|"launch"| REACH
+REACH -->|"replies"| CRM
+RATTLE -->|"deal risk"| CRM
+CRM -->|"forecast"| FORECAST
+FORECAST -->|"signal"| AEMODEL
+AEMODEL -->|"capacity"| OPERATIONS_BUS
+PORTAL -->|"health"| HEALTH
+STRIPE -->|"usage"| HEALTH
+HEALTH -->|"score"| CHURN
+CHURN -->|"risk"| EXPAND
+EXPAND -->|"signal"| OPERATIONS_BUS
+
+%% =========================================
+%% DEAL + DELIVERY DISPATCH
+%% =========================================
+CRM -->|"quote request"| OPERATIONS_BUS
+OPERATIONS_BUS -->|"pricing"| CPQ
+CPQ <-->|"margin"| PRICEGOV
+CPQ -->|"doc"| DOCS
+DOCS -->|"signed"| OPERATIONS_BUS
+OPERATIONS_BUS -->|"billing"| STRIPE
+OPERATIONS_BUS -->|"project"| ROCK
+ROCK -->|"status"| CRM
+SCOPE -->|"cost"| ROCK
+ROCK -->|"blocker"| ESCAL
+ESCAL -->|"ticket"| TICK
+TICK -->|"case"| CRM
+
+%% =========================================
+%% DATA REPLICATION (consolidated)
+%% =========================================
+MKTG -.-> DATA_BUS
+SALES -.-> DATA_BUS
+COMM -.-> DATA_BUS
+IMPL -.-> DATA_BUS
+CS -.-> DATA_BUS
+FIN -.-> DATA_BUS
+DATA_BUS --> ING
+
+ING --> WH
+WH --> DBT
+DBT --> CDM
+DBT --> DATAGOV
+CDM --> SEM
+DATAGOV --> SEM
+SEM --> INTEL
+INTEL --> RETL
+
+%% =========================================
+%% METRICS DISTRIBUTION + BOT
+%% =========================================
+SEM --> METRICS_BUS
+INTEL --> METRICS_BUS
+ALERTS --> METRICS_BUS
+METRICS_BUS --> DMKT
+METRICS_BUS --> DSAL
+METRICS_BUS --> DCOMM
+METRICS_BUS --> DCAP
+METRICS_BUS --> DIMPL
+METRICS_BUS --> DCS
+METRICS_BUS --> DUNITEC
+METRICS_BUS --> DEXEC
+METRICS_BUS --> SCENARIO
+METRICS_BUS -->|"signals"| BOT
+
+%% =========================================
+%% REVERSE ETL + OPERATIONS
+%% =========================================
+RETL --> OPERATIONS_BUS
+OPERATIONS_BUS -->|"scores"| CRM
+OPERATIONS_BUS -->|"risk"| CHURN
+OPERATIONS_BUS -->|"capacity"| AEMODEL
+OPERATIONS_BUS -->|"econ"| PRICEGOV
+
+%% =========================================
+%% GOVERNANCE + BOT ACTIONS
+%% =========================================
+SLACK --> BOT
+BOT --> OPERATIONS_BUS
+OPERATIONS_BUS -->|"approve"| APPROV
+APPROV --> OPERATIONS_BUS
+OPERATIONS_BUS -->|"action"| REACH
+OPERATIONS_BUS -->|"action"| TICK
+TRIGGER -->|"alert"| SLACK
+BOT --> AUDIT
+
+%% =========================================
+%% NODE STYLES
+%% =========================================
+class FP,TP signal
+class CRM crm
+class ADP adp
+class WEB web
+class ATTR attr
+class EXP,SCORE,BUDOPT exp
+class MAUD aud
+class ROUTE route
+class REACH reach
+class RATTLE rattle
+class FORECAST forecast
+class AEMODEL,SDRMODEL,PMMODEL cap
+class HEALTH,CHURN,EXPAND ret
+class CPQ,PRICEGOV cpq
+class DOCS docs
+class STRIPE stripe
+class ROCK,SCOPE rock
+class ESCAL escal
+class TICK tick
+class PORTAL portal
+class METER meter
+class ING,WH,CDM,SEM pipe
+class REVMODEL,CAPMODEL,HEALTHMODEL,RETMODEL,ATTRMODEL,UNITMODEL,EXPMODEL pipe
+class INTEL intel
+class DATAGOV gov
+class RETL pipe
+class DMKT,DSAL,DCOMM,DCAP,DIMPL,DCS,DUNITEC,DEXEC,ALERTS dash
+class SCENARIO scenario
+class SLACK,BOT,APPROV,AUDIT gov
+class TRIGGER trigger
+class SIGNAL_BUS,OPERATIONS_BUS,DATA_BUS,METRICS_BUS busnode
+
+%% =========================================
+%% LAYER STYLES
+%% =========================================
+style L1 fill:#eff6ff,stroke:#2563eb,stroke-width:1.5px,color:#1e40af
+style L2 fill:#fefce8,stroke:#ca8a04,stroke-width:1.5px,color:#854d0e
+style MKTG fill:#f0f9ff,stroke:#0284c7,stroke-width:1px,color:#0c4a6e
+style SALES fill:#fef9c3,stroke:#a16207,stroke-width:1px,color:#713f12
+style CAP fill:#fce7f3,stroke:#be185d,stroke-width:1px,color:#831843
+style RET fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#15803d
+style COMM fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#15803d
+style IMPL fill:#fef5e7,stroke:#ea580c,stroke-width:1px,color:#9a3412
+style CS fill:#f5f3ff,stroke:#7c3aed,stroke-width:1px,color:#3b0764
+style FIN fill:#fdf2f8,stroke:#be185d,stroke-width:1px,color:#831843
+style L3 fill:#faf5ff,stroke:#7c3aed,stroke-width:1.5px,color:#5b21b6
+style DBT fill:#ede9fe,stroke:#7c3aed,stroke-width:1px,color:#5b21b6
+style L4 fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,color:#334155
+style L5 fill:#fdf2f8,stroke:#be185d,stroke-width:1.5px,color:#831843
+</pre>
+</div>
+
+<!-- ════════ TOOL OWNERSHIP & RESPONSIBILITY ════ -->
+<h2 class="stitle">Tool Ownership & System Responsibility</h2>
+<div class="matrix">
+  <table class="ownership-table">
+    <thead>
+      <tr>
+        <th>Tool</th>
+        <th>Purpose</th>
+        <th>Primary Owner</th>
+        <th>Secondary Owner</th>
+        <th>Data Owned</th>
+        <th>Primary Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="dash">CRM (HubSpot / Salesforce)</td>
+        <td>Source of truth for leads, opportunities, forecasts</td>
+        <td class="owner">RevOps</td>
+        <td>Sales</td>
+        <td>Leads, Accounts, Opportunities</td>
+        <td class="actions">Pipeline management, Forecast updates, Deal tracking</td>
+      </tr>
+      <tr>
+        <td class="dash">Ad Platforms (LinkedIn / Google)</td>
+        <td>Demand generation</td>
+        <td class="owner">Marketing</td>
+        <td>RevOps</td>
+        <td>Spend, clicks, conversions</td>
+        <td class="actions">Budget allocation, Campaign optimization</td>
+      </tr>
+      <tr>
+        <td class="dash">Outreach</td>
+        <td>Sales engagement</td>
+        <td class="owner">Sales</td>
+        <td>RevOps</td>
+        <td>Email activity, meeting activity</td>
+        <td class="actions">Sequence management, Outreach automation</td>
+      </tr>
+      <tr>
+        <td class="dash">Rattle</td>
+        <td>Revenue intelligence</td>
+        <td class="owner">RevOps</td>
+        <td>Sales Leadership</td>
+        <td>Deal risk, forecast signals</td>
+        <td class="actions">Forecast monitoring, Risk identification</td>
+      </tr>
+      <tr>
+        <td class="dash">CPQ</td>
+        <td>Pricing and quoting</td>
+        <td class="owner">RevOps</td>
+        <td>Finance</td>
+        <td>Quotes, pricing, discount data</td>
+        <td class="actions">Quote generation, Discount governance</td>
+      </tr>
+      <tr>
+        <td class="dash">PandaDoc</td>
+        <td>Contract execution</td>
+        <td class="owner">Sales</td>
+        <td>RevOps</td>
+        <td>Contracts, signature status</td>
+        <td class="actions">Send contracts, Track signing</td>
+      </tr>
+      <tr>
+        <td class="dash">Rocketlane</td>
+        <td>Implementation management</td>
+        <td class="owner">Delivery Lead</td>
+        <td>RevOps</td>
+        <td>Project timelines, milestones</td>
+        <td class="actions">Implementation tracking, Go-live management</td>
+      </tr>
+      <tr>
+        <td class="dash">Stripe</td>
+        <td>Billing and invoicing</td>
+        <td class="owner">Finance</td>
+        <td>RevOps</td>
+        <td>Invoices, payments, subscriptions</td>
+        <td class="actions">Billing, Invoice tracking</td>
+      </tr>
+      <tr>
+        <td class="dash">Warehouse (Snowflake / BigQuery)</td>
+        <td>Central data storage</td>
+        <td class="owner">Data / RevOps</td>
+        <td>Finance</td>
+        <td>All replicated system data</td>
+        <td class="actions">Reporting foundation</td>
+      </tr>
+      <tr>
+        <td class="dash">Semantic Layer / dbt</td>
+        <td>Metric definitions and transformations</td>
+        <td class="owner">RevOps</td>
+        <td>Finance</td>
+        <td>Metric definitions</td>
+        <td class="actions">Metric computation</td>
+      </tr>
+      <tr>
+        <td class="dash">RevOps Bot / Slack</td>
+        <td>System interaction and automation</td>
+        <td class="owner">RevOps</td>
+        <td>Engineering</td>
+        <td>Audit logs, actions</td>
+        <td class="actions">Query metrics, trigger workflows</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════ DASHBOARD OWNERSHIP & DECISION AUTHORITY (NEW) ════ -->
+<h2 class="stitle">Dashboard Ownership & Decision Authority</h2>
+<div class="matrix">
+  <table class="ownership-table">
+    <thead>
+      <tr>
+        <th>Dashboard</th>
+        <th>Primary Owner</th>
+        <th>Key Metrics</th>
+        <th>Decision Authority</th>
+        <th>Update Cadence</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="dash">Marketing Dashboard</td>
+        <td class="owner">Head of Marketing</td>
+        <td>CPC, CPL, CPA, ROAS, Pipeline generated</td>
+        <td>Budget allocation, Campaign optimization</td>
+        <td class="freq">Weekly</td>
+      </tr>
+      <tr>
+        <td class="dash">Sales Dashboard</td>
+        <td class="owner">VP Sales</td>
+        <td>Pipeline coverage, Win rate, Forecast accuracy</td>
+        <td>Hiring, Pipeline management</td>
+        <td class="freq">Weekly</td>
+      </tr>
+      <tr>
+        <td class="dash">Commercial Dashboard</td>
+        <td class="owner">RevOps</td>
+        <td>ACV, Discount %, Time-to-close</td>
+        <td>Pricing governance, Discount approval</td>
+        <td class="freq">Weekly</td>
+      </tr>
+      <tr>
+        <td class="dash">Implementation Dashboard</td>
+        <td class="owner">Delivery Lead</td>
+        <td>Time-to-go-live, Escalations, Project margin</td>
+        <td>Hiring, Resource allocation</td>
+        <td class="freq">Weekly</td>
+      </tr>
+      <tr>
+        <td class="dash">Customer Success Dashboard</td>
+        <td class="owner">CS Lead</td>
+        <td>Health score, Churn risk, Expansion pipeline</td>
+        <td>Retention strategy, Expansion motion</td>
+        <td class="freq">Weekly</td>
+      </tr>
+      <tr>
+        <td class="dash">Unit Economics Dashboard</td>
+        <td class="owner">CFO</td>
+        <td>LTV, CAC, Contribution margin, Payback period</td>
+        <td>Pricing, Budget allocation</td>
+        <td class="freq">Monthly</td>
+      </tr>
+      <tr>
+        <td class="dash">Executive Dashboard</td>
+        <td class="owner">CEO</td>
+        <td>ARR, NRR, Margin, Hiring needs, Forecast</td>
+        <td>Strategic direction, Hiring, Investment allocation</td>
+        <td class="freq">Monthly</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════ DECISION TRIGGERS (EXPANDED) ════ -->
+<h2 class="stitle">Autonomous Decision Triggers & Automation (15 Total)</h2>
+<div class="dec-box">
+  <h3>Predictive Triggers → Slack Bot → Automated Workflows</h3>
+  <div class="dec-item"><span class="if">IF</span> CPA ↑ 25% WoW <span class="then">→ THEN</span> Pause/shift spend, investigate, launch diagnostic A/B test</div>
+  <div class="dec-item"><span class="if">IF</span> Landing page conversion ↓ X% <span class="then">→ THEN</span> Launch A/B test, flag to marketing ops, budget hold</div>
+  <div class="dec-item"><span class="if">IF</span> ROAS below threshold <span class="then">→ THEN</span> Reallocate to best channel, alert budget optimizer</div>
+  <div class="dec-item"><span class="if">IF</span> Lead score high + intent spike <span class="then">→ THEN</span> Fast-track routing (VIP SLA), assign AE directly</div>
+  <div class="dec-item"><span class="if">IF</span> Deal risk < 40 + discount requested <span class="then">→ THEN</span> Manager approval required, margin impact calculated</div>
+  <div class="dec-item"><span class="if">IF</span> Pipeline coverage ratio < 3x <span class="then">→ THEN</span> Hiring flag raised, capacity model updated, CEO notified</div>
+  <div class="dec-item"><span class="if">IF</span> Implementation utilization > 85% <span class="then">→ THEN</span> Hiring review triggered, timeline risk assessment sent</div>
+  <div class="dec-item"><span class="if">IF</span> Contribution margin by segment < target <span class="then">→ THEN</span> Pricing review initiated, margin impact dashboard alert</div>
+  <div class="dec-item"><span class="if">IF</span> Magic number drops below threshold <span class="then">→ THEN</span> Efficiency review triggered, cost reduction analysis</div>
+  <div class="dec-item"><span class="if">IF</span> Delivery project margin negative <span class="then">→ THEN</span> Change order workflow, scope control intervention</div>
+  <div class="dec-item"><span class="if">IF</span> Offline conversion rate drops <span class="then">→ THEN</span> Tracking/pixel audit, attribution verification</div>
+  <div class="dec-item"><span class="if">IF</span> Usage drops 30% WoW <span class="then">→ THEN</span> CS alert + Slack, assign risk owner, renewal playbook</div>
+  <div class="dec-item"><span class="if">IF</span> Renewal probability < 60% <span class="then">→ THEN</span> Risk workflow triggered, CS + AE assigned</div>
+  <div class="dec-item"><span class="if">IF</span> P1 Implementation escalation <span class="then">→ THEN</span> Exec alert, auto-create CRM case, assign SLA timer</div>
+  <div class="dec-item"><span class="if">IF</span> NRR drops below target <span class="then">→ THEN</span> Cohort analysis run, expansion opportunities identified, board alert</div>
+</div>
+
+<!-- ════════ COMPUTATIONAL MODELS (EXPANDED) ════ -->
+<h2 class="stitle">Computational Models: dbt Transforms → Intelligence Engine</h2>
+<div class="matrix">
+  <table class="mtable">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>Input Data</th>
+        <th>Computation Logic</th>
+        <th>Output Metrics</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="sys">Revenue Model</td>
+        <td>fct_opportunity, fct_invoice, fct_payment</td>
+        <td>SUM(closed_won) by cohort/month/segment. Close date calc. Revenue recognition rules.</td>
+        <td>ARR, MRR, ACV, TCV, Bookings, Billings, Collections %</td>
+      </tr>
+      <tr>
+        <td class="sys">Capacity Model</td>
+        <td>dim_user, fct_opportunity, utilization logs</td>
+        <td>Pipeline per AE/SDR. Projects per PM. Revenue per headcount. Utilization % (actual / available). Ramp by tenure.</td>
+        <td>Coverage ratio, Revenue/AE, Utilization %, Hiring flag</td>
+      </tr>
+      <tr>
+        <td class="sys">Health Model</td>
+        <td>fct_usage (daily agg), fct_ticket (TTR, severity), engagement flags</td>
+        <td>Usage trend (WoW, MoM). Ticket + severity trend. Engagement score. Weighted health (0-100).</td>
+        <td>Health score, Health trend, Engagement score, Risk category</td>
+      </tr>
+      <tr>
+        <td class="sys">Retention Model</td>
+        <td>Health score, renewal history, price increases, ticket escalations</td>
+        <td>Churn probability via logistic regression (features: health, usage drop %, ticket spike, price change). NRR = (Starting ARR + Expansion - Churn) / Starting ARR.</td>
+        <td>Churn risk %, NRR %, GRR %, Expansion %, Cohort analysis</td>
+      </tr>
+      <tr>
+        <td class="sys">Attribution Model</td>
+        <td>fct_lead (source, date), fct_opportunity (won, amount), ad spend, closed won + SQL (offline)</td>
+        <td>First-touch: 100% to first source. Multi-touch: linear or time-decay. Offline: closed_won uploaded to ad platform.</td>
+        <td>CPL, CPA, ROAS, Pipeline influenced ($), Attribution by channel</td>
+      </tr>
+      <tr>
+        <td class="sys">Unit Economics Model</td>
+        <td>Revenue (by cohort), COGS, delivery hours (Rocketlane), support load, fully-loaded CAC (ads + SDR + AE comp)</td>
+        <td>LTV = ARPU × gross_margin / monthly_churn_rate. CAC = (ad spend + sales cost + SDR salary allocation) / customers_acquired. Contribution margin = revenue - COGS - delivery - support. Magic number = quarterly ARR growth / sales & marketing spend.</td>
+        <td>LTV, CAC, CAC payback months, Contribution margin %, Gross margin %, Magic number, Payback by segment</td>
+      </tr>
+      <tr>
+        <td class="sys">Marketing Experiment Model</td>
+        <td>A/B test metadata (test date, variant, traffic split, conversions, spend), historical baseline</td>
+        <td>Lift % = (variant conversion - control conversion) / control conversion. Confidence via binomial test. Segment lift (by audience, cohort, device, etc).</td>
+        <td>Lift %, Confidence, Winning variant, Lift by segment, Rollout recommendation</td>
+      </tr>
+      <tr>
+        <td class="sys">Budget Optimization Model</td>
+        <td>Ad spend by channel, fct_lead by channel, ROI/ROAS by channel, marginal CAC curve</td>
+        <td>Estimate marginal CAC per channel from spend vs lead volume. Identify channel saturation (marginal CAC inflection). Allocate incremental budget to lowest marginal CAC (unconstrained optimization).</td>
+        <td>Recommended spend allocation, Marginal CAC by channel, Channel saturation flags, Expected ROAS from reallocation</td>
+      </tr>
+      <tr>
+        <td class="sys">Scenario Simulator Model</td>
+        <td>All models above + user inputs (headcount scenarios, discount policy, spend shifts, conversion assumptions)</td>
+        <td>For each scenario: recalculate pipeline (capacity), revenue (pricing), delivery cost (utilization), contribution margin. Project ARR, NRR, cash impact, hiring needs.</td>
+        <td>Forecast ARR, NRR impact, Capacity risk, Margin impact, Hiring requirements, Cash runway impact</td>
+      </tr>
+      <tr>
+        <td class="sys">Data Governance Model</td>
+        <td>dbt manifest, table/column metadata, metric definitions, RBAC matrix</td>
+        <td>Freshness check (last_modified timestamp vs SLA). Schema validation (expected columns). Metric lineage (source → transform → output). RBAC enforcement (finance metrics require CFO access).</td>
+        <td>Data quality score %, Freshness status, Lineage clarity, RBAC compliance, Audit trail</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════ DASHBOARD OWNERSHIP (EXPANDED) ════ -->
+<h2 class="stitle">Dashboard Ownership & Decision Authority (with Primary Actions)</h2>
+<div class="note">
+  <b>Governance Principle:</b> Single-threaded owner for each dashboard. RevOps ensures metric definitions. Finance signs off on unit economics. All RBAC-controlled via bot + reverse ETL.
+</div>
+<div class="matrix">
+  <table class="ownership-table">
+    <thead>
+      <tr>
+        <th>Dashboard</th>
+        <th>Owner</th>
+        <th>Primary KPIs</th>
+        <th>Data Source</th>
+        <th>Cadence</th>
+        <th>Primary Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="dash">Marketing Experiments</td>
+        <td class="owner">Marketing Ops</td>
+        <td>Active tests, Lift %, Confidence, Rollout recommendation, Conversion by variant</td>
+        <td>Exp Engine + Attribution</td>
+        <td class="freq">Real-time</td>
+        <td class="actions">Launch/pause test, Rollout winning variant, Budget shift</td>
+      </tr>
+      <tr>
+        <td class="dash">Marketing</td>
+        <td class="owner">Head of Marketing</td>
+        <td>CPC, CPL, CPA, ROAS, MQL→SQL, Pipeline influenced, Budget allocation</td>
+        <td>Ad Platforms + Attribution ELT</td>
+        <td class="freq">Weekly</td>
+        <td class="actions">Pause spend, Reallocate budget, Launch A/B test, Adjust targeting</td>
+      </tr>
+      <tr>
+        <td class="dash">Sales</td>
+        <td class="owner">VP Sales</td>
+        <td>Pipeline by stage, Win %, Forecast accuracy, Coverage ratio, Cycle time</td>
+        <td>CRM + Forecast Model</td>
+        <td class="freq">Weekly</td>
+        <td class="actions">Hiring decision, Pipeline push, Rep coaching, Territory assignment</td>
+      </tr>
+      <tr>
+        <td class="dash">Capacity</td>
+        <td class="owner">VP People Ops</td>
+        <td>Coverage ratio, Utilization %, Revenue per AE/PM, Hiring flag, Ramp curve</td>
+        <td>Capacity Model ELT</td>
+        <td class="freq">Weekly</td>
+        <td class="actions">Open hiring req, Adjust quota, Restructure territory, Rebalance team</td>
+      </tr>
+      <tr>
+        <td class="dash">Commercial</td>
+        <td class="owner">RevOps + Deal Desk</td>
+        <td>ACV, TCV, Discount %, Approval time, Time-to-sign, Margin impact</td>
+        <td>CPQ + PandaDoc ELT</td>
+        <td class="freq">Weekly</td>
+        <td class="actions">Adjust pricing, Cap discount, Approve amendment, Margin alert</td>
+      </tr>
+      <tr>
+        <td class="dash">Implementation</td>
+        <td class="owner">Delivery Lead</td>
+        <td>Time-to-go-live, On-time %, Escalations/week, Project margin, Utilization %</td>
+        <td>Rocketlane + Incident + Scope</td>
+        <td class="freq">Weekly</td>
+        <td class="actions">Hiring, Scope control, Timeline push, Change order approval</td>
+      </tr>
+      <tr>
+        <td class="dash">Customer Success</td>
+        <td class="owner">CS Lead</td>
+        <td>TTR, SLA adherence %, CSAT, Health score, Churn risk %, Expansion pipeline</td>
+        <td>Support Portal + Health Model</td>
+        <td class="freq">Weekly</td>
+        <td class="actions">Risk mitigation workflow, Expansion outreach, Escalation handling, Renewal push</td>
+      </tr>
+      <tr>
+        <td class="dash">Unit Economics</td>
+        <td class="owner">CFO + RevOps</td>
+        <td>LTV, CAC, CAC payback, Contribution %, Gross margin %, Magic number by segment</td>
+        <td>Unit Econ Model + Revenue</td>
+        <td class="freq">Monthly</td>
+        <td class="actions">Pricing review, Cost reduction, Segment focus, M&A readiness valuation</td>
+      </tr>
+      <tr>
+        <td class="dash">Finance</td>
+        <td class="owner">CFO</td>
+        <td>ARR, NRR, DSO, AR aging, Cash runway, Margin % by segment, Collections %</td>
+        <td>Revenue Model + Billing</td>
+        <td class="freq">Monthly</td>
+        <td class="actions">Cash strategy, Pricing policy, Collections workflow, Budget approval</td>
+      </tr>
+      <tr>
+        <td class="dash">Executive (North Star)</td>
+        <td class="owner">CEO</td>
+        <td>Funnel, NRR, CAC payback, Margin %, Hiring needs, Scenario impact, Magic number</td>
+        <td>All ELTs + Scenario Sim</td>
+        <td class="freq">Monthly</td>
+        <td class="actions">Strategic allocation, Hiring budget, Board narrative, M&A / IPO readiness</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════ INTELLIGENCE ENGINE (EXPANDED) ════ -->
+<h2 class="stitle">Intelligence Engine: Predictive Algorithms (8 Core)</h2>
+<div class="matrix">
+  <table class="mtable">
+    <thead>
+      <tr>
+        <th>Algorithm</th>
+        <th>Input Signals</th>
+        <th>Logic</th>
+        <th>Output Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="sys">Anomaly Detection</td>
+        <td>Usage (daily), Reply rate, SLA breaches, CPA, Discount rate</td>
+        <td>Z-score or isolation forest on rolling 30-day baseline. Flag if 2σ deviation.</td>
+        <td>Alert to owner (CS for usage drop, Marketing for CPA spike, Finance for discount spike)</td>
+      </tr>
+      <tr>
+        <td class="sys">Forecast Deviation</td>
+        <td>Weekly forecast vs actual pipeline stage change</td>
+        <td>Variance % = (Actual - Forecast) / Forecast. If > 10%, flag.</td>
+        <td>VP Sales weekly review; deal-by-deal risk analysis</td>
+      </tr>
+      <tr>
+        <td class="sys">Deal Risk Scoring</td>
+        <td>Rattle signals, Outreach activity, Days in stage, Discount applied, Deal size</td>
+        <td>Logistic regression on historical won/lost. Score 0-100. Red flag if < 40.</td>
+        <td>Heightened engagement; manager approval for discount if risk < 40</td>
+      </tr>
+      <tr>
+        <td class="sys">Cohort Retention Analysis</td>
+        <td>NRR model output, by acquisition cohort (month, segment, region)</td>
+        <td>Cohort survival curve. Identify declining cohorts. Compare to baseline.</td>
+        <td>Board alert if cohort NRR trending down; trigger retention task force</td>
+      </tr>
+      <tr>
+        <td class="sys">CAC Payback Projection</td>
+        <td>Monthly cohort revenue, cash received timeline, historical payback curves</td>
+        <td>Extrapolate payback months forward. Flag if trending beyond target.</td>
+        <td>Finance alert; trigger cost reduction or pricing adjustment review</td>
+      </tr>
+      <tr>
+        <td class="sys">Margin by Segment & Unit Econ</td>
+        <td>Bookings, COGS, delivery cost, support cost, fully-loaded CAC by segment</td>
+        <td>Gross margin % and contribution margin %. Identify low-margin segments. Magic number trend.</td>
+        <td>Pricing review for low-margin segments; focus on high-margin expansion; efficiency review</td>
+      </tr>
+      <tr>
+        <td class="sys">Experiment Lift Detection (NEW)</td>
+        <td>A/B test results (conversions, lift %, confidence), historical baseline</td>
+        <td>Binomial test for statistical significance. Segment lift analysis. Rollout readiness score.</td>
+        <td>Confidence-based rollout recommendation; budget allocation to winning variant</td>
+      </tr>
+      <tr>
+        <td class="sys">Scenario Impact Modeling (NEW)</td>
+        <td>All models + user scenario inputs (headcount, discount policy, spend, conversions)</td>
+        <td>Recalculate pipeline, revenue, delivery cost, NRR, cash. Show delta vs baseline.</td>
+        <td>CEO can query "what if we hire 2 AEs?" or "cap discounts at 15%?" and see impact</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  try {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#ffffff',
+        primaryBorderColor: '#2563eb',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '11px'
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'linear',
+        useMaxWidth: true,
+        padding: 20
+      }
+    });
+  } catch (e) {
+    console.error('Mermaid initialization error:', e);
+  }
+</script>
+</body>
+</html>
