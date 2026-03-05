@@ -18,8 +18,8 @@
     .legend-item{display:flex;align-items:center;gap:5px;color:#64748b;font-weight:500}
     .leg{width:32px;height:2px;border-radius:1px}
     .leg.solid{background:#475569}
-    .diagram-wrap{background:#fff;border-radius:12px;padding:20px 14px;margin-bottom:20px;box-shadow:0 1px 2px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.05);overflow-x:auto}
-    .mermaid{display:flex;justify-content:center;min-height:500px}
+    .diagram-wrap{background:#fff;border-radius:12px;padding:28px 24px;margin-bottom:20px;box-shadow:0 1px 2px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.05);overflow-x:auto}
+    .mermaid{display:flex;justify-content:center;min-height:700px}
     .stitle{font-size:15px;font-weight:700;color:#0f172a;margin:24px 0 12px;display:flex;align-items:center;gap:6px}
     .stitle::before{content:'';width:2.5px;height:16px;border-radius:2px;background:linear-gradient(180deg,#2563eb,#7c3aed)}
     .matrix{background:#fff;border-radius:10px;padding:14px 12px;box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-bottom:20px;overflow-x:auto}
@@ -112,8 +112,8 @@ end
 %% =========================================
 subgraph crm["  Sales CRM  "]
   direction LR
-  C2["Sales Intelligence\n- Routing · Outreach\n- Deal risk · Rattle"]
   C1["CRM Control Tower\n- Stages · Forecast · SLAs\n- Capacity planning"]
+  C2["Sales Intelligence\n- Routing · Outreach\n- Deal risk · Rattle"]
   C3["CPQ + Pricing Governance\n- Pricing rules\n- Guardrails · Margin"]
   C4["PandaDoc Contracts\n- Quote · NDA · BAA\n- Signatures"]
   C5["Contract Signed\nEvent Trigger"]
@@ -163,53 +163,95 @@ subgraph data["  Data + Analytics + Bot  "]
   D5["Adam Sales Ops Bot\n- Slack commands · @adam\n- Approvals · Audit\n- Orchestration"]
 end
 
-%% =========================================
-%% INTERNAL EDGES
-%% =========================================
+%% ═══════════════════════════════════════════
+%% BLOCK 1 — INTRA-LAYER EDGES
+%% ═══════════════════════════════════════════
+
+%% Revenue Planning
+RP1 -->|"targets"| RP2
+RP1 -->|"targets"| RP3
+
+%% Marketing
 M2 -->|"spend"| M1
 M1 -->|"traffic"| M3
 M3 -->|"scored"| M4
+
+%% Sales CRM
 C2 -->|"enriched"| C1
 C1 -->|"quote"| C3
 C3 -->|"contract"| C4
 C4 -->|"signed"| C5
+
+%% Implementation
 I1 -->|"phases"| I2
 I2 -->|"miss"| I3
+
+%% Product Platform
+P1 -->|"inference events"| P2
+P3 -->|"prioritized insights"| P4
+P4 -->|"product improvements"| P1
+
+%% CS + FinOps
 F1 -->|"activate"| F2
 F2 -->|"drop"| F3
 F2 -->|"usage"| F4
+
+%% Data + Analytics
 D1 -->|"model"| D2
 D2 -->|"metrics"| D3
 D3 -->|"viz"| D4
 D1 -->|"query"| D5
 D2 -->|"insights"| D5
-P1 -->|"inference events"| P2
-RP1 -->|"targets"| RP2
-RP1 -->|"targets"| RP3
-P3 -->|"prioritized insights"| P4
-P4 -->|"product improvements"| P1
 
-%% =========================================
-%% CROSS-SUBGRAPH EDGES
-%% =========================================
+%% ═══════════════════════════════════════════
+%% BLOCK 2 — CROSS-LAYER DATA FLOWS (↓ downward)
+%% ═══════════════════════════════════════════
+
+%% Planning → Execution
+RP2 -->|"quota & capacity targets"| C1
+RP3 -->|"budget allocation"| M2
+
+%% Signals → Marketing
 M1 -->|"generates"| S1
 S1 -->|"signals"| M3
 S2 -->|"intent"| M3
+
+%% Marketing → Sales
 M4 -->|"pipeline"| C2
+
+%% Sales → Implementation
 C1 -->|"impl stage"| I1
+
+%% Sales → CS/FinOps
 C5 -->|"notify"| F1
 C5 -->|"notify"| F3
+
+%% Implementation → CS
+I3 -->|"escalate"| F3
+
+%% Product → CS/FinOps
+P2 -->|"usage events"| F2
+P2 -->|"usage drop"| F3
+
+%% CS/FinOps → Data
 F4 -->|"billing"| D1
 F2 -->|"data"| D1
-I3 -->|"escalate"| F3
-D3 -->|"scores"| C1
-D5 -->|"target visitors"| M4
-P2 -->|"usage events"| F2
+
+%% Product → Data
 P2 -->|"product data"| D1
-P2 -->|"usage drop"| F3
-RP2 -->|"quota & capacity targets"| C1
-RP3 -->|"budget allocation"| M2
 D1 -->|"customer signals"| P3
+
+%% ═══════════════════════════════════════════
+%% BLOCK 3 — FEEDBACK LOOPS (↑ bot & planning)
+%% ═══════════════════════════════════════════
+
+%% Intelligence → Sales
+D3 -->|"scores"| C1
+
+%% Adam Bot → Outbound
+D5 -->|"target visitors"| M4
+
+%% Adam Bot → Planning (closed loop)
 D5 -->|"performance insights"| RP1
 D5 -->|"forecast signals"| RP2
 
@@ -713,9 +755,11 @@ style data fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,color:#334155
       },
       flowchart: {
         htmlLabels: true,
-        curve: 'linear',
+        curve: 'basis',
         useMaxWidth: true,
-        padding: 20
+        padding: 28,
+        nodeSpacing: 30,
+        rankSpacing: 40
       }
     });
   } catch (e) {
